@@ -1,0 +1,16 @@
+const $=s=>document.querySelector(s);const today=()=>new Date().toLocaleDateString('sv-SE');const sample=`[오늘의 한마디]
+큰일은 작은 검증을 쌓아 이루어진다.
+
+[GPT를 쓰는 법]
+목표, 현재 상황, 제한 조건, 원하는 결과물을 함께 알려주시오. 한 번의 답을 정답으로 여기지 말고 “내 가정을 반박해 달라”, “실패할 이유를 먼저 찾아 달라”고 요청하시오. 마지막에는 표나 체크리스트처럼 바로 실행할 결과물을 요구하시오.
+
+[사업과 삶의 방향]
+창작물 커미션 서비스는 기능을 많이 만드는 것보다 누가 왜 선택하는지 확인하는 일이 먼저요. 처음에는 한 종류의 고객과 거래 상황을 좁혀 검증하시오. 작업 범위, 수정 횟수, 납기, AI 사용 표시, 환불 기준처럼 거래 중 불안한 순간을 줄이는 가치를 살피되 실제 고객 인터뷰로 중요도를 확인하시오.
+
+[오늘 할 일]
+1. 핵심 고객을 한 문장으로 정의하기
+2. 현재 거래의 불편 다섯 가지 적기
+3. 가장 위험한 가정을 질문으로 바꾸기
+
+[오늘의 질문]
+내가 만들고 싶은 기능보다 고객이 해결하고 싶은 문제를 먼저 보고 있는가?`;let sb=null,user=null;const cfg=window.APP_CONFIG||{};if(window.supabase&&cfg.SUPABASE_URL?.startsWith('https://')&&!cfg.SUPABASE_URL.includes('YOUR-'))sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);function render(t){$('#letter').textContent=t;$('#date').textContent=today()}async function refresh(){if(!sb||!user){render(sample);return}let d=today();let {data}=await sb.from('daily_letters').select('body').eq('user_id',user.id).eq('day',d).maybeSingle();if(data?.body){render(data.body);return}let {data:out,error}=await sb.functions.invoke('advisor',{body:{kind:'daily',day:d}});if(!error&&out?.text){await sb.from('daily_letters').upsert({user_id:user.id,day:d,body:out.text});render(out.text)}else render(sample)}async function state(){if(!sb){$('#status').textContent='미설정: 예시 상소문 사용 중';render(sample);return}let {data}=await sb.auth.getSession();user=data.session?.user||null;$('#logout').hidden=!user;$('#login').hidden=!!user;$('#signup').hidden=!!user;$('#status').textContent=user?'로그인됨':'로그인하면 개인 기록 저장 가능';await refresh();if(user){let {data:n}=await sb.from('advisor_notes').select('note').eq('user_id',user.id).maybeSingle();$('#notes').value=n?.note||''}}function say(t){$('#chat').textContent+='\n\n'+t}$('#signup').onclick=async()=>{if(!sb)return alert('관리자 설정이 필요합니다.');let {error}=await sb.auth.signUp({email:$('#email').value,password:$('#password').value});alert(error?.message||'가입 요청 완료. 이메일 확인이 필요할 수 있습니다.')};$('#login').onclick=async()=>{if(!sb)return alert('Supabase 설정을 먼저 해야 합니다.');let {error}=await sb.auth.signInWithPassword({email:$('#email').value,password:$('#password').value});if(error)alert(error.message);else state()};$('#logout').onclick=async()=>{await sb.auth.signOut();state()};$('#refresh').onclick=refresh;$('#save').onclick=async()=>{if(!sb||!user)return alert('먼저 로그인하세요.');let {error}=await sb.from('advisor_notes').upsert({user_id:user.id,note:$('#notes').value});$('#saved').textContent=error?'저장 실패':'저장 완료'};$('#ask').onclick=async()=>{let q=$('#question').value.trim();if(!q)return;if(!sb||!user){say('로그인 및 AI 설정을 마치면 참모 상담을 사용할 수 있습니다.');return}say('나: '+q);$('#question').value='';let {data,error}=await sb.functions.invoke('advisor',{body:{kind:'chat',message:q}});say(error?'AI 요청 실패. 배포 설정을 확인하세요.':'제갈량: '+(data?.text||'응답 없음'))};state();setInterval(()=>{let d=new Date();if(d.getHours()===9&&d.getMinutes()===30)refresh()},30000);
