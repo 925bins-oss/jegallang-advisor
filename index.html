@@ -107,4 +107,10 @@ const day=new Date().toLocaleDateString('en-CA');const key='zhuge-demo-'+day;let
 const counter=document.getElementById('counter'),btn=document.getElementById('askBtn');function upd(){counter.textContent=`오늘의 시범 대화: ${n}/5회 · 이 브라우저에만 적용`;btn.disabled=n>=5}upd();
 btn.onclick=()=>{const val=document.getElementById('askText').value.trim();if(!val)return;const chat=document.getElementById('chat');const u=document.createElement('div');u.className='chatline user';u.textContent=val;chat.append(u);const a=document.createElement('div');a.className='chatline';a.textContent='군사: 이 질문을 원하는 결과, 현재 제약, 확인할 사실, 지금 할 수 있는 작은 행동으로 나누어 보십시오. 이 화면은 실제 AI 분석을 수행하지 않으니, 구체적 조언은 AI 연결 후 제공하도록 설계할 수 있습니다.';chat.append(a);document.getElementById('askText').value='';n++;localStorage.setItem(key,String(n));upd()};
 document.getElementById('resetBtn').onclick=()=>{document.getElementById('chat').innerHTML='<div class="chatline">군사: 고민을 적어 주시면 우선 목표·제약·다음 행동으로 나누어 생각해 보십시오.</div>'};
-</script></body></html>
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+
+</body></html>
